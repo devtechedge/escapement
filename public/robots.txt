@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://escapement-two.vercel.app/sitemap.xml
