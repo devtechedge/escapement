@@ -27,6 +27,7 @@ interface BenchSceneProps {
   disabled: boolean;
   turns: number;
   maxTurns: number;
+  showHint: boolean;
 }
 
 interface LightPosition {
@@ -52,6 +53,7 @@ export function BenchScene({
   disabled,
   turns,
   maxTurns,
+  showHint,
 }: BenchSceneProps) {
   const [light, setLight] = useState<LightPosition>({ x: 0.22, y: 0.52 });
   const [dragging, setDragging] = useState(false);
@@ -168,9 +170,20 @@ export function BenchScene({
         ) : null}
       </div>
 
+      {showHint ? (
+        <p className="bench-hint">
+          <span className="bench-hint-mark" aria-hidden="true" />
+          Move the regulator one notch, then run a test and read the passport.
+        </p>
+      ) : null}
       <div className="plate-controls">
         <RegulatorRack value={calibre.regulator} onChange={onRegulator} disabled={disabled} />
-        <Crown onWind={onWind} disabled={disabled} turns={turns} maxTurns={maxTurns} />
+        <Crown
+          onWind={onWind}
+          disabled={disabled || turns >= maxTurns}
+          turns={turns}
+          maxTurns={maxTurns}
+        />
       </div>
     </div>
   );

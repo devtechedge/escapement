@@ -11,6 +11,7 @@ const SHORTCUTS: Array<[string, string]> = [
   ['W', 'Wind one mainspring turn'],
   ['T', 'Run the 24 hour rate test'],
   ['C', 'Go to the calibre passport'],
+  ['S', 'Open the calibre shelf'],
   ['L', 'Switch the bench between day and night'],
   ['Space', 'Start or stop the movement'],
   ['?', 'Open this bench note'],
@@ -52,8 +53,8 @@ export function HelpDialog({ open, onClose }: HelpDialogProps) {
         </div>
         <p className="help-intro">
           Select a wheel on the plate to inspect it. Open a cabinet drawer to fit a spare. Drag
-          the crown to wind. Turn the regulator one notch at a time. Run the timing stand before
-          you trust a rate.
+          the crown to wind. Turn the regulator one notch at a time. Start the movement, then run
+          the timing stand before you trust a rate. Use the shelf to keep more than one calibre.
         </p>
         <div className="help-columns">
           <div>
@@ -79,9 +80,20 @@ export function HelpDialog({ open, onClose }: HelpDialogProps) {
               temperature and the seeded condition. The same build and actions always give the same
               result. This is a teaching model, not a certified chronometer.
             </p>
+            <p>
+              A test is current only for the build that produced it. A calibre shows certified only
+              while it is running, wound, and its current rate, amplitude and beat error remain
+              inside tolerance. Stopping the movement or winding it can withdraw the certificate.
+            </p>
+            <p>
+              The Pocket arrives with its fourth wheel in the spares tray, so its train is
+              incomplete until you fit one. If you close the bench, the movement keeps running while
+              reserve remains and stops when reserve is exhausted.
+            </p>
             <p className="help-fine">
-              Everything stays in this browser. No account, no analytics, no network requests after
-              load.
+              Saved builds and measurements stay in this browser. A share link carries the parts,
+              regulator, condition and theme in the URL hash. No account, no analytics, no network
+              requests after load.
             </p>
           </div>
         </div>

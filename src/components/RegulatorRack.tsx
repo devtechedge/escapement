@@ -77,6 +77,7 @@ export function RegulatorRack({ value, onChange, disabled }: RegulatorRackProps)
         <span className="field-label">Regulator</span>
         <span className="mono regulator-value">{value > 0 ? `+${value}` : value}</span>
         <span className="regulator-note">1 notch = 4 s/d</span>
+        {disabled ? <span className="regulator-note regulator-status">Test in progress</span> : null}
       </div>
       <div
         className="regulator-track"

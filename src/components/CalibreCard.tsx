@@ -22,10 +22,13 @@ interface CalibreCardProps {
   train: TrainSnapshot;
   testCurrent: boolean;
   certificate: boolean;
+  running: boolean;
   onRename: (name: string) => void;
   onExportJson: () => void;
   onExportSvg: () => void;
   onImport: (file: File) => void;
+  onShare: () => void;
+  shareStatus: string | null;
   importError: string | null;
   disabled: boolean;
 }
@@ -33,11 +36,17 @@ interface CalibreCardProps {
 function TrainDiagram({ state, train }: { state: BenchState; train: TrainSnapshot }) {
   const { parts } = state.calibre;
   const nodes = [
-    { key: 'barrel', x: 28, y: 58, teeth: WHEELS[parts.barrel].teeth, label: 'B' },
-    { key: 'center', x: 80, y: 34, teeth: WHEELS[parts.center].teeth, label: 'C' },
-    { key: 'third', x: 132, y: 58, teeth: WHEELS[parts.third].teeth, label: 'T' },
-    { key: 'fourth', x: 184, y: 34, teeth: WHEELS[parts.fourth].teeth, label: 'F' },
-    { key: 'escape', x: 232, y: 58, teeth: WHEELS[parts.escape].teeth, label: 'E' },
+    { key: 'barrel', x: 28, y: 58, teeth: WHEELS[parts.barrel].teeth as number | null, label: 'B' },
+    { key: 'center', x: 80, y: 34, teeth: WHEELS[parts.center].teeth as number | null, label: 'C' },
+    { key: 'third', x: 132, y: 58, teeth: WHEELS[parts.third].teeth as number | null, label: 'T' },
+    {
+      key: 'fourth',
+      x: 184,
+      y: 34,
+      teeth: parts.fourth === null ? null : WHEELS[parts.fourth].teeth,
+      label: 'F',
+    },
+    { key: 'escape', x: 232, y: 58, teeth: WHEELS[parts.escape].teeth as number | null, label: 'E' },
   ];
   return (
     <svg className="train-diagram" viewBox="0 0 260 88" aria-label="Train schematic">
@@ -50,8 +59,16 @@ function TrainDiagram({ state, train }: { state: BenchState; train: TrainSnapsho
       />
       {nodes.map((node) => (
         <g key={node.key}>
-          <circle cx={node.x} cy={node.y} r="10" fill="none" stroke="var(--card-brass)" strokeWidth="1.2" />
-          <circle cx={node.x} cy={node.y} r="3" fill="var(--ruby)" />
+          <circle
+            cx={node.x}
+            cy={node.y}
+            r="10"
+            fill="none"
+            stroke="var(--card-brass)"
+            strokeWidth="1.2"
+            strokeDasharray={node.teeth === null ? '2 2' : undefined}
+          />
+          <circle cx={node.x} cy={node.y} r="3" fill="var(--ruby)" opacity={node.teeth === null ? 0.3 : 1} />
           <text
             x={node.x}
             y={node.y - 15}
@@ -73,7 +90,9 @@ function TrainDiagram({ state, train }: { state: BenchState; train: TrainSnapsho
         letterSpacing="1.2"
         fill="var(--card-muted)"
       >
-        {train.centerToFourth.toFixed(2)} : 1 · {formatVph(train.escapeVph)}
+        {train.missingFourth
+          ? 'Fourth wheel missing'
+          : `${train.centerToFourth.toFixed(2)} : 1 · ${formatVph(train.escapeVph)}`}
       </text>
     </svg>
   );
@@ -122,15 +141,19 @@ export function CalibreCard({
   train,
   testCurrent,
   certificate,
+  running,
   onRename,
   onExportJson,
   onExportSvg,
   onImport,
+  onShare,
+  shareStatus,
   importError,
   disabled,
 }: CalibreCardProps) {
   const { calibre } = state;
   const lastTest = state.lastTest;
+  const hasPower = calibre.reserveHours > 0;
   const [nameDraft, setNameDraft] = useState(calibre.name);
 
   useEffect(() => {
@@ -142,27 +165,36 @@ export function CalibreCard({
     else setNameDraft(calibre.name);
   };
 
+  const stopped = Boolean(lastTest && testCurrent && !running);
   const stampState = certificate
     ? 'is-certified'
     : lastTest && !testCurrent
       ? 'is-stale'
-      : lastTest
-        ? 'is-outside'
-        : 'is-untested';
+      : stopped
+        ? 'is-stopped'
+        : lastTest
+          ? 'is-outside'
+          : 'is-untested';
 
   const stampLabel = certificate
     ? 'BENCH CERTIFIED'
     : lastTest && !testCurrent
       ? 'TEST STALE'
-      : lastTest
-        ? 'NOT CERTIFIED'
-        : 'UNTESTED';
+      : stopped
+        ? 'MOVEMENT STOPPED'
+        : lastTest
+          ? 'NOT CERTIFIED'
+          : 'UNTESTED';
 
   const measurementText = !lastTest
-    ? 'Untested. The rate and amplitude above are predicted from the current build.'
+    ? calibre.parts.fourth === null
+      ? 'Untested. The fourth wheel is missing, so the train cannot run.'
+      : 'Untested. The rate and amplitude above are predicted from the current build.'
     : !testCurrent
       ? `Last measured ${formatTime(lastTest.at)}, now stale. The build changed.`
-      : `Measured ${formatTime(lastTest.at)} at ${lastTest.temperature} °C, ${formatReserve(lastTest.reserve)} reserve.`;
+      : stopped
+        ? `Measured ${formatTime(lastTest.at)}. The movement is stopped. Start it again to certify.`
+        : `Measured ${formatTime(lastTest.at)} at ${lastTest.temperature} °C, ${formatReserve(lastTest.reserve)} reserve.`;
 
   return (
     <article
@@ -203,7 +235,13 @@ export function CalibreCard({
         <dl className="passport-specs">
           <div>
             <dt>Condition</dt>
-            <dd>{calibre.fault === 'none' ? 'Sound' : FAULT_INFO[calibre.fault].short}</dd>
+            <dd>
+              {calibre.parts.fourth === null
+                ? 'Fourth missing'
+                : calibre.fault === 'none'
+                  ? 'Sound'
+                  : FAULT_INFO[calibre.fault].short}
+            </dd>
           </div>
           <div>
             <dt>Beat</dt>
@@ -219,15 +257,15 @@ export function CalibreCard({
           </div>
           <div>
             <dt>Rate</dt>
-            <dd className="mono">{formatRate(regulation.rate)}</dd>
+            <dd className="mono">{hasPower ? formatRate(regulation.rate) : 'Stopped'}</dd>
           </div>
           <div>
             <dt>Amplitude</dt>
-            <dd className="mono">{formatAmplitude(regulation.amplitude)}</dd>
+            <dd className="mono">{hasPower ? formatAmplitude(regulation.amplitude) : '–'}</dd>
           </div>
           <div>
             <dt>Beat error</dt>
-            <dd className="mono">{formatBeat(regulation.beatError)}</dd>
+            <dd className="mono">{hasPower ? formatBeat(regulation.beatError) : '–'}</dd>
           </div>
           <div>
             <dt>Regulator</dt>
@@ -260,6 +298,9 @@ export function CalibreCard({
           <button type="button" className="text-button" onClick={onExportJson}>
             JSON
           </button>
+          <button type="button" className="text-button" onClick={onShare}>
+            Link
+          </button>
           <label className="text-button import-label">
             Import
             <input
@@ -275,6 +316,11 @@ export function CalibreCard({
           </label>
         </div>
       </div>
+      {shareStatus ? (
+        <p className="share-status" role="status" aria-live="polite">
+          {shareStatus}
+        </p>
+      ) : null}
       {importError ? (
         <p className="import-error" role="status" aria-live="polite">
           {importError}
