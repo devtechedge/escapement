@@ -14,10 +14,10 @@ export default defineConfig({
   },
   expect: { timeout: 9000 },
   webServer: {
-    command: 'npm run preview -- --host 127.0.0.1 --port 4391',
+    command: 'npm run build && npm run preview -- --host 127.0.0.1 --port 4391',
     url: 'http://127.0.0.1:4391',
     reuseExistingServer: false,
-    timeout: 60_000,
+    timeout: 120_000,
   },
   projects: [
     {

@@ -27,6 +27,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Production dependency audit
+        run: npm audit --omit=dev
+
       - name: Typecheck
         run: npm run typecheck
 
@@ -45,8 +48,8 @@ jobs:
       - name: End-to-end tests
         run: npm run e2e
 
-      - name: Upload Playwright report on failure
-        if: failure()
+      - name: Upload Playwright report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report

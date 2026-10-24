@@ -4,6 +4,8 @@ A watchmaker's bench in the browser. Assemble a mechanical movement, wind the ma
 
 Silent by design. Deterministic horology. No account, no backend, no network requests after load.
 
+This is not another dashboard or CRUD demo. Every wheel drives real train arithmetic, every fault has a physical symptom and a physical fix, and the certificate is recomputed from the current build rather than stored as a claim.
+
 [![Live Demo](https://img.shields.io/badge/live-escapement--two.vercel.app-9e1a32)](https://escapement-two.vercel.app)
 [![CI](https://github.com/devtechedge/escapement/actions/workflows/ci.yml/badge.svg)](https://github.com/devtechedge/escapement/actions/workflows/ci.yml)
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white)](https://vite.dev)
@@ -32,7 +34,7 @@ Silent by design. Deterministic horology. No account, no backend, no network req
 ## The bench
 
 - **School** is a slow 18,000 vph lever movement. It runs, but the regulator is set fast. Eight notches bring it back.
-- **Pocket** is a 21,600 vph pocket movement with a worn fourth pivot. The rate is far out, the amplitude is low, and the evidence is under the raking light.
+- **Pocket** is a 21,600 vph pocket movement, partly apart. The fourth wheel sits in the spares tray and its pivot is worn. Fit the wheel, then replace the pivot, and the train is complete again.
 - **Marine** is a clean 28,800 vph movement with no wind and no certificate. Wind it, test it, regulate it, certify it.
 
 New builds can start clean or with one of five seeded conditions: a magnetized hairspring, a worn pivot, a set mainspring, a beat error, or a loose cannon pinion.
@@ -44,9 +46,11 @@ New builds can start clean or with one of five seeded conditions: a magnetized h
 - Turn the regulator one notch at a time. Each notch is four seconds per day.
 - Drag the crown or press Wind. Six mainspring turns give sixty hours of reserve.
 - Run the timing stand. It spins the movement through 24 simulated hours in 12 seconds, draws a rate trace on paper, and reports rate, amplitude, and beat error. The test consumes 24 hours of reserve.
-- Repair the cause, not the symptom. Each fault has a physical fix in the cabinet.
-- Earn a bench certificate when the measured rate is within plus or minus ten seconds per day, the amplitude is 250 to 320 degrees, and the beat error is under 0.5 milliseconds.
-- Export the calibre passport as SVG, the build as JSON, and import a build back.
+- Repair the cause, not the symptom. Each fault has a physical fix in the cabinet. A worn pivot shows as a discolored pivot, a beat error as an offset impulse pin and uneven ticks, and a loose cannon pinion as slipping hands.
+- Earn a bench certificate when the movement is running and the current rate is within plus or minus ten seconds per day, the amplitude is 250 to 320 degrees, and the beat error is under 0.5 milliseconds. Stopping the movement, winding it, or moving the regulator out of tolerance withdraws the certificate.
+- Save builds to the calibre shelf, then load, rename, duplicate, or delete them. Switching calibres saves the current bench first. The shelf has its own IndexedDB store with a localStorage fallback.
+- Export the calibre passport as SVG, the build as JSON, and import a build back. Imported measurements are discarded, so a hand-edited file cannot mint a certificate.
+- Copy a share link that restores the parts, regulator, condition, name, and theme in the URL hash.
 - Switch the bench between day and night with the lamp toggle or the L key.
 
 Everything stays in this browser. The bench persists to IndexedDB with a localStorage fallback.
@@ -63,6 +67,7 @@ Everything stays in this browser. The bench persists to IndexedDB with a localSt
 | `W` | Wind one turn |
 | `T` | Run the timing test |
 | `C` | Go to the calibre passport |
+| `S` | Open the calibre shelf |
 | `L` | Switch between day and night |
 | `Space` | Start or stop the movement |
 | `?` | Bench note and model limits |
@@ -89,7 +94,7 @@ This is a teaching model, not a certified chronometer. The rate, amplitude, and 
 | Frontend | Vite 7, React 19, TypeScript strict |
 | Movement | Generated SVG, CSS materials |
 | Simulation | Pure TypeScript horology |
-| State | React state, IndexedDB with localStorage fallback |
+| State | React state, IndexedDB schema v2 with localStorage fallback |
 | Fonts | Self-hosted Bodoni Moda, Public Sans, DM Mono |
 | Tests | Vitest and Playwright |
 | Host | Vercel static |
@@ -117,17 +122,18 @@ npm run e2e
 
 ## Verification
 
-- Typecheck, ESLint, 19 unit tests, and 8 Playwright tests are green.
-- Lighthouse on the production build: **99 performance desktop, 91 mobile, 100 accessibility, 100 best practices, 100 SEO**.
-- No console errors, no external requests after load, and no horizontal scroll at 390 px.
-- CI runs typecheck, lint, unit tests, the production build, and Playwright; Dependabot tracks patch and minor updates.
+- Typecheck, ESLint, **81 unit tests**, and **21 Playwright tests** are green.
+- Axe reports no WCAG A or AA violations on the day bench, night bench, help dialog, shelf dialog, or the partly assembled Pocket.
+- Lighthouse on the production build, median of three runs: **99 performance desktop, 91 mobile, 100 accessibility, 100 best practices, 100 SEO**.
+- No console errors, no external requests after load, and no horizontal scroll from 390 to 1920 px. The layout remains usable at a 200 percent zoom equivalent.
+- CI runs production audit, typecheck, lint, unit tests, the production build, and Playwright on Node 22. Dependabot groups weekly patch and minor updates, with no auto-merge.
 
 ## Limits
 
 - The movement is a model. It is not a certified chronometer, and the certificate is a bench artefact, not an official rating.
 - The calibre passport SVG uses the same font families but does not embed them; an external viewer may fall back to system fonts.
-- The reserve drains while the page is closed, capped at empty. A long absence stops the movement; it never damages it.
-- The test consumes 24 hours of reserve. Wind before testing.
+- The reserve drains while the page is closed. The movement keeps running through an absence while reserve remains, then stops when reserve is exhausted. It never damages the movement.
+- The test consumes 24 hours of reserve and reports the state at the end of the test. Wind before testing, especially if the starting reserve is close to 24 hours.
 
 ## License
 
