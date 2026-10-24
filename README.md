@@ -25,7 +25,7 @@ This is not another dashboard or CRUD demo. Every wheel drives real train arithm
 
 ![The School calibre certified, with a measured rate trace](docs/screenshots/02-certified.png)
 
-![The Pocket calibre with a worn fourth pivot](docs/screenshots/03-pocket.png)
+![The Pocket calibre with its fourth wheel missing and a worn pivot](docs/screenshots/03-pocket.png)
 
 ![The bench at night with the lamp toggle](docs/screenshots/04-night.png)
 
@@ -124,8 +124,9 @@ npm run e2e
 
 - Typecheck, ESLint, **81 unit tests**, and **21 Playwright tests** are green.
 - Axe reports no WCAG A or AA violations on the day bench, night bench, help dialog, shelf dialog, or the partly assembled Pocket.
-- Lighthouse on the production build, median of three runs: **99 performance desktop, 91 mobile, 100 accessibility, 100 best practices, 100 SEO**.
+- Lighthouse on the live production alias, median of three runs: **100 performance desktop, 99 mobile, 100 accessibility, 100 best practices, 100 SEO**.
 - No console errors, no external requests after load, and no horizontal scroll from 390 to 1920 px. The layout remains usable at a 200 percent zoom equivalent.
+- The social preview is 1280 by 640 and under 1 MB.
 - CI runs production audit, typecheck, lint, unit tests, the production build, and Playwright on Node 22. Dependabot groups weekly patch and minor updates, with no auto-merge.
 
 ## Limits
