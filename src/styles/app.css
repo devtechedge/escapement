@@ -1866,3 +1866,161 @@ kbd {
   color: var(--muted) !important;
 }
 
+/* Night bench */
+
+:root[data-theme='night'] {
+  color-scheme: dark;
+  --enamel: oklch(0.18 0.02 55);
+  --enamel-light: oklch(0.24 0.025 55);
+  --enamel-deep: oklch(0.13 0.02 50);
+  --ink: oklch(0.93 0.02 85);
+  --ink-soft: oklch(0.8 0.025 82);
+  --muted: oklch(0.71 0.03 78);
+  --paper: oklch(0.22 0.025 60);
+  --paper-deep: oklch(0.18 0.02 60);
+  --mahogany-light: oklch(0.34 0.055 42);
+  --mahogany: oklch(0.27 0.05 40);
+  --mahogany-deep: oklch(0.19 0.04 40);
+  --steel-line: oklch(0.6 0.03 250);
+}
+
+:root[data-theme='night'] body {
+  background:
+    radial-gradient(110% 85% at 18% 0%, oklch(0.25 0.025 60) 0%, transparent 55%),
+    radial-gradient(80% 70% at 92% 8%, oklch(0.21 0.04 50) 0%, transparent 60%),
+    linear-gradient(135deg, var(--enamel-light), var(--enamel-deep));
+}
+
+:root[data-theme='night'] body::before {
+  opacity: 0.18;
+  mix-blend-mode: soft-light;
+}
+
+:root[data-theme='night'] .rail {
+  border-bottom-color: #6d4b21;
+  background:
+    linear-gradient(180deg, rgba(255, 240, 210, 0.06), transparent 45%),
+    linear-gradient(180deg, #332117, #22150e);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 230, 190, 0.12),
+    0 6px 18px rgba(0, 0, 0, 0.28);
+}
+
+:root[data-theme='night'] .wordmark {
+  color: #f6ecd6;
+}
+
+:root[data-theme='night'] .brand-icon {
+  color: var(--brass);
+}
+
+:root[data-theme='night'] .eyebrow {
+  color: #c9a86a;
+}
+
+:root[data-theme='night'] .rail-status {
+  color: #e6d3b1;
+}
+
+:root[data-theme='night'] .rail-rate strong {
+  color: #fff1d4;
+}
+
+:root[data-theme='night'] .reserve-head .mono {
+  color: #e6d3b1;
+}
+
+:root[data-theme='night'] .reserve-track {
+  border-color: #8e6b37;
+  background: #4a3420;
+}
+
+:root[data-theme='night'] .case-select {
+  border-color: #8e6b37;
+  background: #f4e8cc;
+  color: #3a2a1a;
+  color-scheme: light;
+}
+
+:root[data-theme='night'] .button-quiet {
+  border-color: #8e6b37;
+  color: #f0dfbd;
+}
+
+:root[data-theme='night'] .button-quiet:hover:not(:disabled) {
+  background: rgba(255, 230, 190, 0.1);
+}
+
+:root[data-theme='night'] .button[aria-pressed='true'] {
+  border-color: var(--ruby-light);
+  background: rgba(181, 18, 46, 0.24);
+  color: #ffd9c9;
+  box-shadow: inset 0 1px 2px rgba(110, 10, 27, 0.24);
+}
+
+:root[data-theme='night'] .theme-toggle[aria-pressed='true'] {
+  border-color: var(--brass-line);
+  background: linear-gradient(180deg, #f5e8ca, #e3d0a8);
+  color: #3a2a1a;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 252, 240, 0.7),
+    0 1px 2px rgba(55, 35, 15, 0.18);
+}
+
+:root[data-theme='night'] .calibre-card,
+:root[data-theme='night'] .bench-log,
+:root[data-theme='night'] .help-sheet {
+  color-scheme: light;
+}
+
+:root[data-theme='night'] .bench-log {
+  color: var(--card-ink);
+}
+
+:root[data-theme='night'] .bench-log .field-label,
+:root[data-theme='night'] .bench-log .log-count,
+:root[data-theme='night'] .bench-log .log-time,
+:root[data-theme='night'] .bench-log .log-detail,
+:root[data-theme='night'] .bench-log .log-empty {
+  color: var(--card-muted);
+}
+
+:root[data-theme='night'] .bench-log .log-text {
+  color: var(--card-ink);
+}
+
+:root[data-theme='night'] .bench-log .log-kind {
+  color: var(--card-brass);
+}
+
+:root[data-theme='night'] .help-sheet {
+  color: var(--card-ink);
+}
+
+:root[data-theme='night'] .help-sheet h2,
+:root[data-theme='night'] .help-sheet h3 {
+  color: var(--card-ink);
+}
+
+:root[data-theme='night'] .help-sheet .field-label,
+:root[data-theme='night'] .help-sheet .help-intro,
+:root[data-theme='night'] .help-sheet .help-columns p,
+:root[data-theme='night'] .help-sheet .shortcut-list dd {
+  color: var(--card-muted);
+}
+
+:root[data-theme='night'] .help-sheet .help-fine {
+  color: var(--card-muted) !important;
+}
+
+:root[data-theme='night'] .help-sheet kbd {
+  border-color: rgba(158, 122, 67, 0.6);
+  background: rgba(255, 250, 235, 0.5);
+  color: var(--card-muted);
+}
+
+:root[data-theme='night'] .help-sheet .text-button {
+  border-color: var(--card-line);
+  color: var(--card-muted);
+}
+
