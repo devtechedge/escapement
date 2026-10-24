@@ -10,6 +10,7 @@ import type {
   LogEntry,
   Parts,
   PinionLeaves,
+  SavedCalibre,
   SocketId,
   Temperature,
   TestResult,
@@ -51,15 +52,20 @@ function parseParts(raw: unknown): Parts | null {
   const barrel = wheelFor('barrel');
   const center = wheelFor('center');
   const third = wheelFor('third');
-  const fourth = wheelFor('fourth');
   const escape = wheelFor('escape');
   const balance = wheelFor('balance');
   const centerPinion = raw.centerPinion;
   const thirdPinion = raw.thirdPinion;
   const fourthPinion = raw.fourthPinion;
   const escapePinion = raw.escapePinion;
+  let fourth: Parts['fourth'] = null;
+  if (raw.fourth !== null) {
+    const parsedFourth = wheelFor('fourth');
+    if (!parsedFourth) return null;
+    fourth = parsedFourth as Exclude<Parts['fourth'], null>;
+  }
 
-  if (!barrel || !center || !third || !fourth || !escape || !balance) return null;
+  if (!barrel || !center || !third || !escape || !balance) return null;
   if (centerPinion !== 8) return null;
   if (!PINION_VALUES.includes(thirdPinion as PinionLeaves)) return null;
   if (!PINION_VALUES.includes(fourthPinion as PinionLeaves)) return null;
@@ -69,7 +75,7 @@ function parseParts(raw: unknown): Parts | null {
     barrel: barrel as Parts['barrel'],
     center: center as Parts['center'],
     third: third as Parts['third'],
-    fourth: fourth as Parts['fourth'],
+    fourth,
     escape: escape as Parts['escape'],
     balance: balance as Parts['balance'],
     centerPinion: 8,
@@ -107,7 +113,7 @@ export function parseCalibre(raw: unknown): Calibre | null {
     temperature,
     fault,
     reserveHours: Math.max(0, reserveRaw),
-    running: raw.running === true,
+    running: raw.running === true && parts.fourth !== null,
     serial,
   };
   const reserveMax = trainSnapshot(provisional).reserveMax;
@@ -119,7 +125,7 @@ function cleanupName(value: unknown): string | null {
   return cleanString(value, 40);
 }
 
-function parseTest(raw: unknown): TestResult | null {
+export function parseTest(raw: unknown): TestResult | null {
   if (!isRecord(raw)) return null;
   const at = finiteNumber(raw.at);
   const rate = finiteNumber(raw.rate);
@@ -150,7 +156,7 @@ function parseTest(raw: unknown): TestResult | null {
     reserve: Math.max(0, reserve),
     temperature,
     signature,
-    certified: raw.certified === true,
+    certified: false,
     trace,
   };
 }
@@ -201,6 +207,46 @@ export function parseBenchState(raw: unknown): BenchState | null {
     lastTest: parseTest(raw.lastTest),
     savedAt,
   };
+}
+
+function parseShelfEntry(raw: unknown, index: number): SavedCalibre | null {
+  if (!isRecord(raw)) return null;
+  const calibre = parseCalibre(raw.calibre);
+  if (!calibre) return null;
+  const name = cleanupName(raw.name) ?? calibre.name;
+  const savedAt = finiteNumber(raw.savedAt) ?? Date.now();
+  const id = typeof raw.id === 'string' && raw.id ? raw.id.slice(0, 80) : `shelf-${calibre.serial}-${index}`;
+  return {
+    id,
+    name,
+    calibre,
+    lastTest: parseTest(raw.lastTest),
+    log: parseLog(raw.log),
+    savedAt,
+  };
+}
+
+export function parseShelf(raw: unknown): SavedCalibre[] {
+  const list = Array.isArray(raw)
+    ? raw
+    : isRecord(raw) && Array.isArray(raw.shelf)
+      ? raw.shelf
+      : [];
+  const entries: SavedCalibre[] = [];
+  const seen = new Set<string>();
+  list.slice(0, 50).forEach((item, index) => {
+    const entry = parseShelfEntry(item, index);
+    if (!entry || seen.has(entry.id)) return;
+    seen.add(entry.id);
+    entries.push(entry);
+  });
+  return entries.sort((a, b) => b.savedAt - a.savedAt);
+}
+
+export function parseShelfPayload(raw: unknown): SavedCalibre[] | null {
+  if (!isRecord(raw) && !Array.isArray(raw)) return null;
+  const entries = parseShelf(raw);
+  return entries.length > 0 ? entries : null;
 }
 
 export interface ImportPayload {

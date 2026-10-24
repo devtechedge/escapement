@@ -1,10 +1,12 @@
-import type { BenchState } from '../horology/types';
-import { parseBenchState } from './validate';
+import type { BenchState, SavedCalibre } from '../horology/types';
+import { parseBenchState, parseShelf } from './validate';
 
 const DB_NAME = 'escapement-bench';
 const STORE = 'state';
+const SHELF_STORE = 'shelf';
 const KEY = 'bench';
 const LOCAL_KEY = 'escapement.bench.v1';
+const SHELF_LOCAL_KEY = 'escapement.shelf.v1';
 
 function openDb(): Promise<IDBDatabase | null> {
   return new Promise((resolve) => {
@@ -13,11 +15,14 @@ function openDb(): Promise<IDBDatabase | null> {
       return;
     }
     try {
-      const request = indexedDB.open(DB_NAME, 1);
+      const request = indexedDB.open(DB_NAME, 2);
       request.onupgradeneeded = () => {
         const db = request.result;
         if (!db.objectStoreNames.contains(STORE)) {
           db.createObjectStore(STORE);
+        }
+        if (!db.objectStoreNames.contains(SHELF_STORE)) {
+          db.createObjectStore(SHELF_STORE);
         }
       };
       request.onsuccess = () => resolve(request.result);
@@ -38,6 +43,16 @@ export function readLocalBackup(): BenchState | null {
   }
 }
 
+export function readShelfLocal(): SavedCalibre[] {
+  try {
+    const raw = window.localStorage.getItem(SHELF_LOCAL_KEY);
+    if (!raw) return [];
+    return parseShelf(JSON.parse(raw));
+  } catch {
+    return [];
+  }
+}
+
 async function readIndexed(): Promise<BenchState | null> {
   const db = await openDb();
   if (!db) return null;
@@ -55,10 +70,33 @@ async function readIndexed(): Promise<BenchState | null> {
   });
 }
 
+async function readShelfIndexed(): Promise<SavedCalibre[]> {
+  const db = await openDb();
+  if (!db) return [];
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(SHELF_STORE, 'readonly');
+      const request = tx.objectStore(SHELF_STORE).getAll();
+      request.onsuccess = () => resolve(parseShelf(request.result));
+      request.onerror = () => resolve([]);
+    } catch {
+      resolve([]);
+    } finally {
+      db.close();
+    }
+  });
+}
+
 export async function loadBench(): Promise<BenchState | null> {
   const indexed = await readIndexed();
   if (indexed) return indexed;
   return readLocalBackup();
+}
+
+export async function loadShelf(): Promise<SavedCalibre[]> {
+  const indexed = await readShelfIndexed();
+  if (indexed.length > 0) return indexed;
+  return readShelfLocal();
 }
 
 async function writeIndexed(state: BenchState): Promise<void> {
@@ -74,6 +112,21 @@ async function writeIndexed(state: BenchState): Promise<void> {
   }
 }
 
+async function writeShelfIndexed(shelf: SavedCalibre[]): Promise<void> {
+  const db = await openDb();
+  if (!db) return;
+  try {
+    const tx = db.transaction(SHELF_STORE, 'readwrite');
+    const store = tx.objectStore(SHELF_STORE);
+    store.clear();
+    shelf.forEach((entry) => store.put(entry, entry.id));
+  } catch {
+    // The local backup is the fallback.
+  } finally {
+    db.close();
+  }
+}
+
 export function saveBench(state: BenchState): void {
   try {
     window.localStorage.setItem(LOCAL_KEY, JSON.stringify(state));
@@ -81,4 +134,13 @@ export function saveBench(state: BenchState): void {
     // Storage can be unavailable or full. The session still works.
   }
   void writeIndexed(state);
+}
+
+export function saveShelf(shelf: SavedCalibre[]): void {
+  try {
+    window.localStorage.setItem(SHELF_LOCAL_KEY, JSON.stringify({ version: 1, shelf }));
+  } catch {
+    // Storage can be unavailable or full. The session still works.
+  }
+  void writeShelfIndexed(shelf);
 }
