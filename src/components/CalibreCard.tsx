@@ -239,7 +239,7 @@ export function CalibreCard({
       <div className="card-trace-wrap">
         <div className="trace-head">
           <span className="field-label">Latest trace</span>
-          <span className="mono">{lastTest ? formatDate(lastTest.at) : '—'}</span>
+          <span className="mono">{lastTest ? formatDate(lastTest.at) : '-'}</span>
         </div>
         <TraceSpark trace={lastTest?.trace ?? []} />
         <p className="measurement-text">{measurementText}</p>

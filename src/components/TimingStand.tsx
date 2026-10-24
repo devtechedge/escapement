@@ -243,24 +243,24 @@ export function TimingStand({
         <div>
           <span className="field-label">Measured</span>
           <strong className="mono">
-            {result && !testing ? formatRate(result.rate) : '—'}
+            {result && !testing ? formatRate(result.rate) : '-'}
           </strong>
         </div>
         <div>
           <span className="field-label">Amp</span>
           <strong className="mono">
-            {result && !testing ? formatAmplitude(result.amplitude) : '—'}
+            {result && !testing ? formatAmplitude(result.amplitude) : '-'}
           </strong>
         </div>
         <div>
           <span className="field-label">Beat</span>
           <strong className="mono">
-            {result && !testing ? formatBeat(result.beatError) : '—'}
+            {result && !testing ? formatBeat(result.beatError) : '-'}
           </strong>
         </div>
         <div>
           <span className="field-label">At</span>
-          <strong className="mono">{result ? `${result.temperature}°C` : '—'}</strong>
+          <strong className="mono">{result ? `${result.temperature}°C` : '-'}</strong>
         </div>
       </div>
 

@@ -103,11 +103,11 @@ export function buildCardSvg(
     .join('')}
   <text x="186" y="418" text-anchor="middle" font-family="'DM Mono', monospace" font-size="8" letter-spacing="1" fill="#6b5540">${train.centerToFourth.toFixed(2)} : 1 · ${formatVph(train.escapeVph)}</text>
   <text x="430" y="338" font-family="'DM Mono', monospace" font-size="9" letter-spacing="2" fill="#8a6b43">MEASUREMENT</text>
-  ${row(430, 364, 'Tested', lastTest ? `${formatDate(lastTest.at)} ${formatTime(lastTest.at)}` : '—')}
-  ${row(430, 388, 'At', lastTest ? `${lastTest.temperature} °C / ${formatReserve(lastTest.reserve)}` : '—')}
-  ${row(430, 412, 'Rate', lastTest ? formatRate(lastTest.rate) : '—')}
-  ${row(430, 436, 'Amplitude', lastTest ? formatAmplitude(lastTest.amplitude) : '—')}
-  ${row(430, 460, 'Beat error', lastTest ? formatBeat(lastTest.beatError) : '—')}
+  ${row(430, 364, 'Tested', lastTest ? `${formatDate(lastTest.at)} ${formatTime(lastTest.at)}` : '-')}
+  ${row(430, 388, 'At', lastTest ? `${lastTest.temperature} °C / ${formatReserve(lastTest.reserve)}` : '-')}
+  ${row(430, 412, 'Rate', lastTest ? formatRate(lastTest.rate) : '-')}
+  ${row(430, 436, 'Amplitude', lastTest ? formatAmplitude(lastTest.amplitude) : '-')}
+  ${row(430, 460, 'Beat error', lastTest ? formatBeat(lastTest.beatError) : '-')}
   <text x="44" y="446" font-family="'DM Mono', monospace" font-size="8" letter-spacing="1" fill="#8a6b43">LATEST TRACE</text>
   <line x1="44" y1="484" x2="344" y2="484" stroke="#b49a70" stroke-width="1" stroke-dasharray="2 3"/>
   ${trace.length > 0 ? `<polyline points="${tracePoints}" fill="none" stroke="#b5122e" stroke-width="1.4" stroke-linejoin="round"/>` : `<text x="194" y="474" text-anchor="middle" font-family="'DM Mono', monospace" font-size="8" fill="#8a6b43">NO MEASUREMENT</text>`}

@@ -103,7 +103,7 @@ export function PartsCabinet({
                         aria-pressed={installed}
                       >
                         <span>{spec.short}</span>
-                        <span className="mono">{spec.teeth ? `${spec.teeth}t` : '—'}</span>
+                        <span className="mono">{spec.teeth ? `${spec.teeth}t` : '-'}</span>
                       </button>
                     );
                   })}
