@@ -21,6 +21,19 @@ import { loadBench, readLocalBackup, saveBench } from './state/persist';
 import { parseImportPayload } from './state/validate';
 
 const IDLE_TEST: TestRun = { active: false, startedAt: 0, duration: 0, result: null };
+const THEME_KEY = 'escapement.theme';
+
+type Theme = 'day' | 'night';
+
+function readTheme(): Theme {
+  try {
+    const stored = window.localStorage.getItem(THEME_KEY);
+    if (stored === 'day' || stored === 'night') return stored;
+  } catch {
+    // The bench still works when storage is unavailable.
+  }
+  return 'day';
+}
 
 function download(filename: string, content: string, type: string) {
   const blob = new Blob([content], { type });
@@ -44,6 +57,7 @@ export default function App() {
   const [testRun, setTestRun] = useState<TestRun>(IDLE_TEST);
   const [helpOpen, setHelpOpen] = useState(false);
   const [raking, setRaking] = useState(true);
+  const [theme, setTheme] = useState<Theme>(readTheme);
   const [importError, setImportError] = useState<string | null>(null);
 
   const signals = bench.currentSignals(state);
@@ -73,6 +87,19 @@ export default function App() {
       setState((previous) => (previous.still ? previous : { ...previous, still: true }));
     }
   }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    try {
+      window.localStorage.setItem(THEME_KEY, theme);
+    } catch {
+      // The theme still applies for this session.
+    }
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) {
+      meta.setAttribute('content', theme === 'night' ? '#1b1410' : '#f1e7d2');
+    }
+  }, [theme]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => saveBench(state), 600);
@@ -158,6 +185,9 @@ export default function App() {
             behavior: 'smooth',
             block: 'center',
           });
+          break;
+        case 'l':
+          setTheme((current) => (current === 'day' ? 'night' : 'day'));
           break;
         case ' ':
           event.preventDefault();
@@ -259,6 +289,10 @@ export default function App() {
         }}
         onToggleStill={() => setState((previous) => bench.setStill(previous, !previous.still))}
         onHelp={() => setHelpOpen(true)}
+        theme={theme}
+        onToggleTheme={() =>
+          setTheme((current) => (current === 'day' ? 'night' : 'day'))
+        }
       />
 
       <main className="bench">

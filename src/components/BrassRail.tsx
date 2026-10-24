@@ -16,6 +16,36 @@ interface BrassRailProps {
   onWind: () => void;
   onToggleStill: () => void;
   onHelp: () => void;
+  theme: 'day' | 'night';
+  onToggleTheme: () => void;
+}
+
+function SunIcon() {
+  return (
+    <svg viewBox="0 0 16 16" className="theme-icon" aria-hidden="true">
+      <circle cx="8" cy="8" r="3.1" fill="none" stroke="currentColor" strokeWidth="1.2" />
+      <path
+        d="M8 1.2v1.7M8 13.1v1.7M1.2 8h1.7M13.1 8h1.7M3.2 3.2l1.2 1.2M11.6 11.6l1.2 1.2M3.2 12.8l1.2-1.2M11.6 4.4l1.2-1.2"
+        stroke="currentColor"
+        strokeWidth="1.1"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg viewBox="0 0 16 16" className="theme-icon" aria-hidden="true">
+      <path
+        d="M12.2 10.5A5.4 5.4 0 0 1 5.5 3.8 5.6 5.6 0 1 0 12.2 10.5Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }
 
 function EscapeIcon() {
@@ -41,6 +71,8 @@ export function BrassRail({
   onWind,
   onToggleStill,
   onHelp,
+  theme,
+  onToggleTheme,
 }: BrassRailProps) {
   const { train, regulation, running } = signals;
   const status = testing
@@ -167,6 +199,16 @@ export function BrassRail({
           aria-label="Open bench help"
         >
           ?
+        </button>
+        <button
+          type="button"
+          className="button button-icon theme-toggle"
+          onClick={onToggleTheme}
+          aria-label={theme === 'day' ? 'Switch to the night bench' : 'Switch to the day bench'}
+          aria-pressed={theme === 'night'}
+          title={theme === 'day' ? 'Night bench' : 'Day bench'}
+        >
+          {theme === 'day' ? <MoonIcon /> : <SunIcon />}
         </button>
       </div>
     </header>

@@ -11,6 +11,7 @@ const SHORTCUTS: Array<[string, string]> = [
   ['W', 'Wind one mainspring turn'],
   ['T', 'Run the 24 hour rate test'],
   ['C', 'Go to the calibre passport'],
+  ['L', 'Switch the bench between day and night'],
   ['Space', 'Start or stop the movement'],
   ['?', 'Open this bench note'],
   ['Escape', 'Close this bench note'],

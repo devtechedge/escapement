@@ -24,6 +24,16 @@
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content="https://escapement-two.vercel.app/og.png" />
+    <script>
+      try {
+        var theme = localStorage.getItem('escapement.theme');
+        if (theme === 'night') {
+          document.documentElement.dataset.theme = 'night';
+          var themeMeta = document.querySelector('meta[name="theme-color"]');
+          if (themeMeta) themeMeta.setAttribute('content', '#1b1410');
+        }
+      } catch (error) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -64,6 +64,15 @@ test('persists the regulator across a reload', async ({ page }) => {
   );
 });
 
+test('switches to the night bench and remembers the lamp', async ({ page }) => {
+  await page.getByRole('button', { name: 'Switch to the night bench' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'night');
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'night');
+  await page.getByRole('button', { name: 'Switch to the day bench' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'day');
+});
+
 test('offers the JSON export', async ({ page }) => {
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'JSON' }).click();
