@@ -68,3 +68,67 @@ Everything stays in this browser. The bench persists to IndexedDB with a localSt
 | `?` | Bench note and model limits |
 | `Escape` | Close the bench note |
 
+## The model
+
+The arithmetic is real, not decorative.
+
+- Center to fourth is `(center teeth / third pinion) × (third teeth / fourth pinion)`, and the app requires 60:1.
+- Escape wheel rate is `2 × escape teeth × fourth wheel revolutions per hour × (fourth teeth / escape pinion)`. It must match the nominal balance frequency.
+- Reserve is `mainspring turns × barrel teeth / center pinion leaves`.
+- Rate is the regulator position, temperature drift, isochronism across the reserve, and the seeded condition.
+- Amplitude and beat error are deterministic functions of the parts, winding, temperature, and condition.
+
+No runtime randomness. The same build and the same actions always give the same result. The three starting calibres are fixed, so two visitors can compare notes.
+
+This is a teaching model, not a certified chronometer. The rate, amplitude, and beat error are illustrative but calibrated to plausible watchmaking behaviour.
+
+## Stack
+
+| Layer | Choice |
+| --- | --- |
+| Frontend | Vite 7, React 19, TypeScript strict |
+| Movement | Generated SVG, CSS materials |
+| Simulation | Pure TypeScript horology |
+| State | React state, IndexedDB with localStorage fallback |
+| Fonts | Self-hosted Bodoni Moda, Public Sans, DM Mono |
+| Tests | Vitest and Playwright |
+| Host | Vercel static |
+
+## Run locally
+
+```bash
+npm install
+npm run dev
+```
+
+Production preview:
+
+```bash
+npm run build
+npm run preview
+```
+
+Tests:
+
+```bash
+npm test
+npm run e2e
+```
+
+## Verification
+
+- Typecheck, ESLint, 19 unit tests, and 8 Playwright tests are green.
+- Lighthouse on the production build: **99 performance desktop, 91 mobile, 100 accessibility, 100 best practices, 100 SEO**.
+- No console errors, no external requests after load, and no horizontal scroll at 390 px.
+- CI runs typecheck, lint, unit tests, the production build, and Playwright; Dependabot tracks patch and minor updates.
+
+## Limits
+
+- The movement is a model. It is not a certified chronometer, and the certificate is a bench artefact, not an official rating.
+- The calibre passport SVG uses the same font families but does not embed them; an external viewer may fall back to system fonts.
+- The reserve drains while the page is closed, capped at empty. A long absence stops the movement; it never damages it.
+- The test consumes 24 hours of reserve. Wind before testing.
+
+## License
+
+MIT. See [LICENSE](LICENSE). Font families are licensed under the SIL Open Font License; see [LICENSES.md](LICENSES.md).
