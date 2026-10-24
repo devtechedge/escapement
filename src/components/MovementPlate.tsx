@@ -52,11 +52,21 @@ function wheelAngle(socket: SocketId, hours: number, train: TrainSnapshot): numb
   }
 }
 
+const SOCKET_NAME: Record<SocketId, string> = {
+  barrel: 'Barrel',
+  center: 'Center',
+  third: 'Third',
+  fourth: 'Fourth',
+  escape: 'Escape',
+  balance: 'Balance',
+};
+
 function shortLabel(calibre: Calibre, socket: SocketId): string {
+  if (socket === 'balance') return 'Balance · hairspring';
   const wheel = calibre.parts[socket];
-  if (socket === 'balance') return 'Balance';
+  if (!wheel) return 'Fourth · missing';
   const spec = WHEELS[wheel];
-  return `${spec.short} · ${spec.teeth}t`;
+  return `${SOCKET_NAME[socket]} · ${spec.teeth}t`;
 }
 
 function wheelRadius(socket: SocketId): { root: number; tip: number } {
@@ -99,20 +109,26 @@ export function MovementPlate({
   const hourRef = useRef<SVGGElement | null>(null);
   const minuteRef = useRef<SVGGElement | null>(null);
   const secondRef = useRef<SVGGElement | null>(null);
+  const motionSeconds = useRef(START_SECONDS);
 
   useEffect(() => {
+    const hourSlip = calibre.fault === 'loose_cannon' ? 1.2 : 0;
+    const minuteSlip = calibre.fault === 'loose_cannon' ? 8 : 0;
+    const secondSlip = calibre.fault === 'loose_cannon' ? 4 : 0;
+    const palletOffset = calibre.fault === 'beat_error' ? 3.5 : 0;
+
     const setHands = (seconds: number) => {
       hourRef.current?.setAttribute(
         'transform',
-        `rotate(${handAngle(seconds, 43_200)} ${CX} ${CY})`,
+        `rotate(${handAngle(seconds, 43_200) + hourSlip} ${CX} ${CY})`,
       );
       minuteRef.current?.setAttribute(
         'transform',
-        `rotate(${handAngle(seconds, 3_600)} ${CX} ${CY})`,
+        `rotate(${handAngle(seconds, 3_600) + minuteSlip} ${CX} ${CY})`,
       );
       secondRef.current?.setAttribute(
         'transform',
-        `rotate(${handAngle(seconds, 60)} ${CX} ${CY})`,
+        `rotate(${handAngle(seconds, 60) + secondSlip} ${CX} ${CY})`,
       );
     };
 
@@ -125,42 +141,48 @@ export function MovementPlate({
     };
 
     const setStatic = () => {
+      motionSeconds.current = START_SECONDS;
       setWheels(START_SECONDS);
       setHands(START_SECONDS);
       balanceRef.current?.setAttribute('transform', 'rotate(0)');
-      palletRef.current?.setAttribute('transform', 'rotate(0)');
+      palletRef.current?.setAttribute('transform', `rotate(${palletOffset})`);
     };
 
-    if (!running || still) {
+    if (!running) {
       setStatic();
+      return;
+    }
+    if (still) {
       return;
     }
 
     let frame = 0;
     let previous = performance.now();
-    let wheelSeconds = START_SECONDS;
-    let handSeconds = START_SECONDS;
+    let wheelSeconds = motionSeconds.current;
     const balanceHz = testing ? 9 : train.balanceHz;
     const wheelSpeed = testing ? 60 : 1;
-    const handSpeed = testing ? 7_200 : 1;
 
     const tick = (now: number) => {
       const delta = Math.min(0.05, (now - previous) / 1000);
       previous = now;
       wheelSeconds += delta * wheelSpeed;
-      handSeconds += delta * handSpeed;
+      motionSeconds.current = wheelSeconds;
       setWheels(wheelSeconds);
-      setHands(handSeconds);
+      setHands(wheelSeconds);
 
       const phase = (wheelSeconds - START_SECONDS) * Math.PI * 2 * balanceHz;
       const swing = Math.sin(phase) * 32;
       balanceRef.current?.setAttribute('transform', `rotate(${swing.toFixed(2)})`);
-      palletRef.current?.setAttribute('transform', `rotate(${(-swing * 0.18).toFixed(2)})`);
+      palletRef.current?.setAttribute(
+        'transform',
+        `rotate(${(-swing * 0.18 + palletOffset).toFixed(2)})`,
+      );
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
   }, [
+    calibre.fault,
     running,
     still,
     testing,
@@ -308,10 +330,84 @@ export function MovementPlate({
             if (socket === 'balance') return null;
             const spec = SOCKETS[socket];
             const wheelId = calibre.parts[socket];
-            const wheelSpec = WHEELS[wheelId];
             const radius = wheelRadius(socket);
             const selected = selectedSocket === socket;
             const [dx, dy] = EXPLODE_OFFSETS[socket];
+            const label = shortLabel(calibre, socket);
+            if (socket === 'fourth' && wheelId === null) {
+              return (
+                <g
+                  key={socket}
+                  className={`movement-part is-missing ${selected ? 'is-selected' : ''}`}
+                  style={{
+                    transform: exploded ? `translate(${dx}px, ${dy}px)` : 'none',
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Select ${label}`}
+                  aria-pressed={selected}
+                  onClick={() => onSelect(socket)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      onSelect(socket);
+                    }
+                  }}
+                >
+                  <circle
+                    className="focus-ring"
+                    cx={spec.x}
+                    cy={spec.y}
+                    r={spec.r + 12}
+                    fill="none"
+                    stroke="var(--ruby)"
+                    strokeWidth="2"
+                    strokeDasharray="3 5"
+                    opacity={selected ? 0.95 : 0}
+                    pointerEvents="none"
+                  />
+                  <circle
+                    cx={spec.x}
+                    cy={spec.y}
+                    r={spec.r + 2}
+                    fill="transparent"
+                    pointerEvents="all"
+                  />
+                  <g transform={`translate(${spec.x} ${spec.y})`}>
+                    <circle
+                      r={radius.tip}
+                      fill="rgba(45, 28, 12, 0.08)"
+                      stroke="#6d4b21"
+                      strokeWidth="1.4"
+                      strokeDasharray="4 4"
+                    />
+                    <circle
+                      r={radius.root - 8}
+                      fill="none"
+                      stroke="#6d4b21"
+                      strokeWidth="1"
+                      strokeDasharray="2 4"
+                      opacity="0.5"
+                    />
+                    <circle r="8" fill="none" stroke="#513714" strokeWidth="2" strokeDasharray="2 3" />
+                    <circle r="3" fill="url(#rubyJewel)" opacity="0.35" />
+                  </g>
+                  <text
+                    x={spec.x}
+                    y={spec.y + spec.r + 21}
+                    textAnchor="middle"
+                    fontFamily="'DM Mono', monospace"
+                    fontSize="9"
+                    letterSpacing="0.6"
+                    fill="#4a3418"
+                    pointerEvents="none"
+                  >
+                    {label}
+                  </text>
+                </g>
+              );
+            }
+            const wheelSpec = WHEELS[wheelId as Exclude<typeof wheelId, null>];
             const initial = wheelAngle(socket, START_SECONDS / 3600, train) % 360;
             const isEscape = socket === 'escape';
             const isBarrel = socket === 'barrel';
@@ -325,7 +421,7 @@ export function MovementPlate({
                 }}
                 role="button"
                 tabIndex={0}
-                aria-label={`Select ${wheelSpec.label}. ${wheelSpec.teeth} teeth.`}
+                aria-label={`Select ${label}`}
                 aria-pressed={selected}
                 onClick={() => onSelect(socket)}
                 onKeyDown={(event) => {
@@ -335,7 +431,6 @@ export function MovementPlate({
                   }
                 }}
               >
-                <title>{`${wheelSpec.label}. ${wheelSpec.teeth} teeth.`}</title>
                 <circle
                   className="focus-ring"
                   cx={spec.x}
@@ -402,6 +497,13 @@ export function MovementPlate({
                     <circle r={isEscape ? 10 : 8} fill="#8e6b37" stroke="#513714" strokeWidth="2" />
                   </g>
                   <circle r="4.5" fill="url(#rubyJewel)" stroke="#5c0715" strokeWidth="1" />
+                  {socket === 'fourth' && calibre.fault === 'worn_pivot' ? (
+                    <g pointerEvents="none">
+                      <circle cx="6" cy="-4" r="7.5" fill="#3f2412" opacity="0.6" />
+                      <circle cx="6" cy="-4" r="4" fill="#8a4a22" opacity="0.9" />
+                      <circle cx="6" cy="-4" r="1.6" fill="#2a1308" />
+                    </g>
+                  ) : null}
                 </g>
                 <text
                   x={spec.x}
@@ -413,7 +515,7 @@ export function MovementPlate({
                   fill="#4a3418"
                   pointerEvents="none"
                 >
-                  {shortLabel(calibre, socket)}
+                  {label}
                 </text>
               </g>
             );
@@ -428,7 +530,7 @@ export function MovementPlate({
             }}
             role="button"
             tabIndex={0}
-            aria-label="Select balance wheel and hairspring."
+            aria-label="Select Balance · hairspring"
             aria-pressed={selectedSocket === 'balance'}
             onClick={() => onSelect('balance')}
             onKeyDown={(event) => {
@@ -438,7 +540,6 @@ export function MovementPlate({
               }
             }}
           >
-            <title>Balance wheel and hairspring.</title>
             <circle
               className="focus-ring"
               cx={SOCKETS.balance.x}
@@ -479,6 +580,21 @@ export function MovementPlate({
                 <circle r="4.5" fill="url(#rubyJewel)" stroke="#5c0715" strokeWidth="1" />
                 <circle cx="0" cy="-44" r="3" fill="#5f4522" />
                 <circle cx="38" cy="22" r="3" fill="#5f4522" />
+                {calibre.fault === 'beat_error' ? (
+                  <g transform="rotate(26)" pointerEvents="none">
+                    <rect
+                      x="-2.2"
+                      y="30"
+                      width="4.4"
+                      height="14"
+                      rx="1"
+                      fill="#b5122e"
+                      stroke="#5c0715"
+                      strokeWidth="0.8"
+                    />
+                    <circle cy="47" r="3.2" fill="#5c0715" />
+                  </g>
+                ) : null}
               </g>
               <path
                 d="M -64 -8 Q 0 -74 64 -8"
@@ -604,6 +720,18 @@ export function MovementPlate({
               <circle cx={CX} cy={CY} r="4" fill="#b5122e" />
             </g>
             <circle cx={CX} cy={CY} r="6" fill="#c9a35f" stroke="#5c4020" strokeWidth="1.5" />
+            {calibre.fault === 'loose_cannon' ? (
+              <circle
+                cx={CX}
+                cy={CY}
+                r="14"
+                fill="none"
+                stroke="#b5122e"
+                strokeWidth="1.2"
+                strokeDasharray="2 5"
+                opacity="0.85"
+              />
+            ) : null}
           </g>
 
           {evidenceNear && faultPoint && evidenceTag ? (
@@ -643,9 +771,12 @@ export function MovementPlate({
         </g>
       </svg>
       <p className="sr-only">
-        Movement plate. {calibre.name}. {formatRate(regulation.rate)}, amplitude{' '}
-        {formatAmplitude(regulation.amplitude)}, beat error {formatBeat(regulation.beatError)}, reserve{' '}
-        {formatReserve(calibre.reserveHours)}. {regulation.faultLabel}.
+        Movement plate. {calibre.name}.{' '}
+        {calibre.reserveHours > 0
+          ? `${formatRate(regulation.rate)}, amplitude ${formatAmplitude(regulation.amplitude)}, beat error ${formatBeat(regulation.beatError)}`
+          : 'No reserve, stopped'}
+        , reserve {formatReserve(calibre.reserveHours)}.{' '}
+        {calibre.parts.fourth === null ? 'Fourth wheel missing.' : regulation.faultLabel}.
       </p>
     </div>
   );

@@ -27,6 +27,7 @@ interface TimingStandProps {
   train: TrainSnapshot;
   regulation: RegulationSnapshot;
   testing: boolean;
+  running: boolean;
   test: TestRun;
   lastTest: TestResult | null;
   testCurrent: boolean;
@@ -67,6 +68,7 @@ export function TimingStand({
   train,
   regulation,
   testing,
+  running,
   test,
   lastTest,
   testCurrent,
@@ -93,7 +95,8 @@ export function TimingStand({
     return () => cancelAnimationFrame(frame);
   }, [test.active, test.startedAt, test.duration, test.result, lastTest]);
 
-  const result = test.result ?? lastTest;
+  const hasPower = calibre.reserveHours > 0;
+  const result = test.active ? test.result : lastTest;
   const trace = result?.trace ?? [];
   const geometry = traceGeometry(trace);
   const clipWidth = 10 + (TRACE_WIDTH - 20) * progress;
@@ -101,16 +104,23 @@ export function TimingStand({
     ? 'Untested'
     : !testCurrent
       ? 'Stale'
-      : certificate
-        ? 'Certified'
-        : 'Outside';
+      : !running
+        ? 'Stopped'
+        : certificate
+          ? 'Certified'
+          : 'Outside';
+  const liveBeat = result && testCurrent ? result.beatError : regulation.beatError;
   const subLabel = !train.coherent
-    ? 'Train must be coherent'
-    : calibre.reserveHours < 24
-      ? 'Wind to 24 h to test'
-      : still
-        ? '24 h in 1 s · still'
-        : '24 h in 12 s';
+    ? train.missingFourth
+      ? 'Fit the fourth wheel'
+      : 'Train must be coherent'
+    : !running
+      ? 'Start the movement to test'
+      : calibre.reserveHours < 24
+        ? 'Wind to 24 h to test'
+        : still
+          ? '24 h in 1 s · still'
+          : '24 h in 12 s';
 
   return (
     <section className="timing-stand" aria-label="Timing stand">
@@ -124,17 +134,17 @@ export function TimingStand({
 
       <div className="live-readout">
         <div className="live-rate">
-          <span className="rate-number">{formatRate(regulation.rate)}</span>
-          <span className="live-caption">predicted</span>
+          <span className="rate-number">{hasPower ? formatRate(regulation.rate) : 'Stopped'}</span>
+          <span className="live-caption">{hasPower ? 'predicted' : 'no reserve'}</span>
         </div>
         <div className="live-small">
           <div>
             <span className="field-label">Amplitude</span>
-            <strong>{formatAmplitude(regulation.amplitude)}</strong>
+            <strong>{hasPower ? formatAmplitude(regulation.amplitude) : '–'}</strong>
           </div>
           <div>
             <span className="field-label">Beat error</span>
-            <strong>{formatBeat(regulation.beatError)}</strong>
+            <strong>{hasPower ? formatBeat(regulation.beatError) : '–'}</strong>
           </div>
         </div>
       </div>
@@ -228,13 +238,10 @@ export function TimingStand({
             −
           </text>
         </svg>
-        <div className="tick-pair" aria-hidden="true">
+        <div className="tick-pair" aria-hidden="true" data-beat-error={liveBeat.toFixed(2)}>
           <span className="tick-label">tick</span>
           <span className="tick-mark" />
-          <span
-            className="tick-mark"
-            style={{ marginLeft: `${10 + (result?.beatError ?? 0.2) * 12}px` }}
-          />
+          <span className="tick-mark" style={{ marginLeft: `${10 + liveBeat * 12}px` }} />
           <span className="tick-label">tock</span>
         </div>
       </div>
@@ -267,10 +274,25 @@ export function TimingStand({
       {result ? (
         <p className="test-note">
           {testCurrent ? 'Measured' : 'Last measured'} {formatTime(result.at)} at{' '}
-          {formatReserve(result.reserve)} reserve. {certificate ? 'Within certificate tolerances.' : 'Run a fresh test after any change.'}
+          {formatReserve(result.reserve)} reserve.{' '}
+          {!testCurrent
+            ? 'The build changed. Run a fresh test.'
+            : !running
+              ? 'The movement is stopped. Start it again to certify.'
+              : certificate
+                ? 'Within certificate tolerances.'
+                : 'Outside certificate tolerances.'}
         </p>
       ) : (
-        <p className="test-note">The timing stand measures the current build. Wind to 24 h, then run a test.</p>
+        <p className="test-note">
+          {train.missingFourth
+            ? 'The train is incomplete. Fit the fourth wheel, wind to 24 h, then run a test.'
+            : !running
+              ? 'The timing stand measures a running movement. Start it, wind to 24 h, then run a test.'
+              : calibre.reserveHours < 24
+                ? 'The timing stand needs 24 h of reserve. Wind the mainspring, then run a test.'
+                : 'The timing stand measures the current build. Run a test when you are ready.'}
+        </p>
       )}
 
       <div className="test-progress" aria-hidden="true">
@@ -306,7 +328,11 @@ export function TimingStand({
         </div>
       </div>
 
-      {calibre.fault !== 'none' ? (
+      {calibre.parts.fourth === null ? (
+        <p className="stand-fault">
+          <span className="ruby-dot" aria-hidden="true" /> Fourth wheel missing from the train
+        </p>
+      ) : calibre.fault !== 'none' ? (
         <p className="stand-fault">
           <span className="ruby-dot" aria-hidden="true" /> {FAULT_INFO[calibre.fault].label}
         </p>
@@ -315,8 +341,10 @@ export function TimingStand({
         {testing
           ? 'Timing test running.'
           : result
-            ? `Timing result: ${formatRate(result.rate)}, amplitude ${formatAmplitude(result.amplitude)}, beat error ${formatBeat(result.beatError)}. ${verdict}.`
-            : 'No measurement yet.'}
+            ? `Timing result: ${formatRate(result.rate)}, amplitude ${formatAmplitude(result.amplitude)}, beat error ${formatBeat(result.beatError)}. ${verdict}.${!running ? ' Start the movement to certify.' : ''}`
+            : train.missingFourth
+              ? 'The train is incomplete. Fit the fourth wheel before testing.'
+              : 'No measurement yet.'}
       </p>
     </section>
   );

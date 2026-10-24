@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { FAULT_INFO, FAULT_ORDER } from '../horology/faults';
 import { FIXTURE_ORDER, FIXTURES } from '../horology/fixtures';
 import { formatRate, formatReserve } from '../horology/format';
@@ -18,6 +19,8 @@ interface BrassRailProps {
   onHelp: () => void;
   theme: 'day' | 'night';
   onToggleTheme: () => void;
+  shelfCount: number;
+  onOpenShelf: () => void;
 }
 
 function SunIcon() {
@@ -73,6 +76,8 @@ export function BrassRail({
   onHelp,
   theme,
   onToggleTheme,
+  shelfCount,
+  onOpenShelf,
 }: BrassRailProps) {
   const { train, regulation, running } = signals;
   const status = testing
@@ -86,13 +91,18 @@ export function BrassRail({
         : 'Stopped';
   const reservePercent = Math.min(100, (calibre.reserveHours / train.reserveMax) * 100);
   const canRun = train.coherent && calibre.reserveHours > 0 && !testing;
+  const newMenu = useRef<HTMLDetailsElement | null>(null);
+  const choose = (fault: FaultId) => {
+    newMenu.current?.removeAttribute('open');
+    onNewCalibre(fault);
+  };
 
   return (
     <header className="rail">
       <div className="rail-brand">
         <EscapeIcon />
         <div>
-          <div className="wordmark">ESCAPEMENT</div>
+          <h1 className="wordmark">ESCAPEMENT</h1>
           <div className="eyebrow">Watchmaker's bench · No. 05</div>
         </div>
       </div>
@@ -124,7 +134,7 @@ export function BrassRail({
 
       <div className="rail-rate" aria-label="Current predicted rate">
         <span className="field-label">Rate</span>
-        <strong>{formatRate(regulation.rate)}</strong>
+        <strong>{calibre.reserveHours > 0 ? formatRate(regulation.rate) : 'Stopped'}</strong>
       </div>
 
       <div className="rail-reserve">
@@ -150,7 +160,7 @@ export function BrassRail({
           className="button button-primary"
           onClick={onToggleRun}
           disabled={testing || (!canRun && !running)}
-          aria-label={running ? 'Stop the movement' : 'Start the movement'}
+          aria-label={running ? 'Stop the movement' : 'Run the movement'}
         >
           {running ? 'Stop' : 'Run'}
         </button>
@@ -172,19 +182,27 @@ export function BrassRail({
         >
           Still
         </button>
-        <details className="new-menu">
+        <button
+          type="button"
+          className="button button-quiet shelf-button"
+          onClick={onOpenShelf}
+          aria-label={`Open the calibre shelf, ${shelfCount} saved`}
+        >
+          Shelf <span className="shelf-button-count">{shelfCount}</span>
+        </button>
+        <details className="new-menu" ref={newMenu}>
           <summary className="button button-quiet" aria-label="Start a new calibre">
             New
           </summary>
           <div className="new-menu-panel">
-            <button type="button" onClick={() => onNewCalibre('none')} disabled={testing}>
+            <button type="button" onClick={() => choose('none')} disabled={testing}>
               Clean build
             </button>
             {FAULT_ORDER.map((fault) => (
               <button
                 key={fault}
                 type="button"
-                onClick={() => onNewCalibre(fault)}
+                onClick={() => choose(fault)}
                 disabled={testing}
               >
                 {FAULT_INFO[fault].label}

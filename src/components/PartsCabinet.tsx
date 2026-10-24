@@ -24,7 +24,9 @@ function pinionFor(parts: Parts, socket: SocketId): PinionLeaves | null {
 }
 
 function drawerMeta(socket: SocketId, state: BenchState): string {
-  const wheel = WHEELS[state.calibre.parts[socket]];
+  const wheelId = state.calibre.parts[socket];
+  if (!wheelId) return 'missing';
+  const wheel = WHEELS[wheelId];
   if (socket === 'balance') return 'hairspring';
   if (socket === 'fourth') return `${wheel.teeth}t · ${WHEEL_OPTIONS.fourth.length} variants`;
   return `${wheel.teeth}t`;
@@ -40,8 +42,9 @@ export function PartsCabinet({
   disabled,
 }: PartsCabinetProps) {
   const { calibre } = state;
-  const selectedWheel = WHEELS[calibre.parts[state.selectedSocket]];
-  const selectedPinion = pinionFor(calibre.parts, state.selectedSocket);
+  const selectedWheelId = calibre.parts[state.selectedSocket];
+  const selectedWheel = selectedWheelId ? WHEELS[selectedWheelId] : null;
+  const selectedPinion = selectedWheelId ? pinionFor(calibre.parts, state.selectedSocket) : null;
   const fault = FAULT_INFO[calibre.fault];
   const selectedLabel = SOCKET_LABELS[state.selectedSocket];
   const selectedDrawerRef = useRef<HTMLButtonElement | null>(null);
@@ -108,7 +111,9 @@ export function PartsCabinet({
                     );
                   })}
                   <p className="drawer-note">
-                    {WHEELS[calibre.parts[socket]].note}
+                    {calibre.parts[socket] === null
+                      ? 'The fourth wheel is in the spares tray. Fit one to complete the train.'
+                      : WHEELS[calibre.parts[socket]].note}
                   </p>
                 </div>
               ) : null}
@@ -151,7 +156,9 @@ export function PartsCabinet({
                   );
                 })}
               </div>
-              {selectedPinion === null ? (
+              {selectedWheel === null ? (
+                <p className="drawer-note">Fit the {selectedLabel.toLowerCase()} wheel before its pinion.</p>
+              ) : selectedPinion === null ? (
                 <p className="drawer-note">The {selectedLabel} has no swappable pinion.</p>
               ) : null}
             </div>
@@ -161,12 +168,29 @@ export function PartsCabinet({
 
       <div className="inspector">
         <div className="field-label">On the bench</div>
-        <h3>{selectedWheel.label}</h3>
+        <h3>{selectedWheel ? selectedWheel.label : `${selectedLabel} wheel missing`}</h3>
         <p className="inspector-line">
-          {selectedWheel.teeth ? `${selectedWheel.teeth} teeth` : 'hairspring'} ·{' '}
-          {selectedPinion === null ? 'fixed pinion' : `${selectedPinion} leaves`} ·{' '}
-          {calibre.jewels} jewels
+          {selectedWheel === null
+            ? 'empty socket · fourth wheel in the tray'
+            : `${selectedWheel.teeth ? `${selectedWheel.teeth} teeth` : 'hairspring'} · ${selectedPinion === null ? 'fixed pinion' : `${selectedPinion} leaves`} · ${calibre.jewels} jewels`}
         </p>
+        {calibre.parts.fourth === null ? (
+          <div className="condition is-missing">
+            <div className="condition-head">
+              <span className="ruby-dot" aria-hidden="true" />
+              <strong>Fourth wheel missing</strong>
+            </div>
+            <p>The train cannot run until the fourth wheel is fitted.</p>
+            <button
+              type="button"
+              className="button button-service"
+              onClick={() => onInstallWheel('F72')}
+              disabled={disabled}
+            >
+              Fit the fourth wheel
+            </button>
+          </div>
+        ) : null}
         {calibre.fault !== 'none' ? (
           <div className="condition">
             <div className="condition-head">
@@ -183,7 +207,7 @@ export function PartsCabinet({
               {fault.fix}
             </button>
           </div>
-        ) : (
+        ) : calibre.parts.fourth === null ? null : (
           <p className="condition-ok">Condition sound. The selected part is in order.</p>
         )}
       </div>
