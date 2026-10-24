@@ -44,12 +44,12 @@ export const FIXTURES: Record<FixtureId, Fixture> = {
     jewels: 19,
     parts: {
       ...baseParts,
-      fourth: 'F72',
+      fourth: null,
     },
     regulator: 0,
     reserveHours: 30,
     fault: 'worn_pivot',
-    blurb: 'A 21,600 vph pocket movement, partly apart. The fourth wheel pivot is worn.',
+    blurb: 'A 21,600 vph pocket movement, partly apart. The fourth wheel is in the tray and its pivot is worn.',
   },
   marine: {
     id: 'marine',

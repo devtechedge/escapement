@@ -6,7 +6,8 @@ export function trainSnapshot(calibre: Calibre): TrainSnapshot {
   const barrel = WHEELS[p.barrel].teeth;
   const center = WHEELS[p.center].teeth;
   const third = WHEELS[p.third].teeth;
-  const fourth = WHEELS[p.fourth].teeth;
+  const missingFourth = p.fourth === null;
+  const fourth = p.fourth === null ? 0 : WHEELS[p.fourth].teeth;
   const escape = WHEELS[p.escape].teeth;
 
   const thirdRevsPerHour = (center / p.thirdPinion) * 1;
@@ -15,8 +16,8 @@ export function trainSnapshot(calibre: Calibre): TrainSnapshot {
   const escapeVph = 2 * escape * escapeRevsPerHour;
 
   const centerToFourth = (center / p.thirdPinion) * (third / p.fourthPinion);
-  const trainOk = Math.abs(centerToFourth - 60) < 0.001;
-  const beatOk = Math.abs(escapeVph - calibre.nominalVph) < 0.5;
+  const trainOk = !missingFourth && Math.abs(centerToFourth - 60) < 0.001;
+  const beatOk = !missingFourth && Math.abs(escapeVph - calibre.nominalVph) < 0.5;
   const barrelHoursPerTurn = barrel / p.centerPinion;
   const reserveMax = barrelHoursPerTurn * 6;
   const balanceHz = calibre.nominalVph / 7200;
@@ -34,10 +35,14 @@ export function trainSnapshot(calibre: Calibre): TrainSnapshot {
     trainOk,
     beatOk,
     coherent: trainOk && beatOk,
+    missingFourth,
   };
 }
 
 export function trainHeadline(snapshot: TrainSnapshot): string {
+  if (snapshot.missingFourth) {
+    return 'Fourth wheel missing';
+  }
   if (!snapshot.trainOk) {
     return `Train ${snapshot.centerToFourth.toFixed(2)}:1, needs 60:1`;
   }

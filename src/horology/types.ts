@@ -37,7 +37,7 @@ export interface Parts {
   barrel: 'B80';
   center: 'C64';
   third: 'T60';
-  fourth: 'F60' | 'F72' | 'F64';
+  fourth: 'F60' | 'F72' | 'F64' | null;
   escape: 'E15';
   balance: 'BAL1';
   centerPinion: 8;
@@ -74,6 +74,7 @@ export interface TrainSnapshot {
   trainOk: boolean;
   beatOk: boolean;
   coherent: boolean;
+  missingFourth: boolean;
 }
 
 export interface RegulationSnapshot {
@@ -124,3 +125,14 @@ export interface BenchState {
   lastTest: TestResult | null;
   savedAt: number;
 }
+
+export interface SavedCalibre {
+  id: string;
+  name: string;
+  calibre: Calibre;
+  lastTest: TestResult | null;
+  log: LogEntry[];
+  savedAt: number;
+}
+
+export type BenchTheme = 'day' | 'night';

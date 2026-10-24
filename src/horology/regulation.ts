@@ -44,6 +44,8 @@ export function regulationSnapshot(calibre: Calibre): RegulationSnapshot {
 
   const beatError = clamp(0.2 + fault.beat, 0, 3);
   const certified =
+    !train.missingFourth &&
+    calibre.reserveHours > 0 &&
     calibre.fault === 'none' &&
     Math.abs(rate) <= CERT_RATE &&
     amplitude >= CERT_AMP_MIN &&

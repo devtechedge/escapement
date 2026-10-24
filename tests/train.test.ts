@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { makeCalibre } from '../src/state/bench';
-import { trainSnapshot } from '../src/horology/train';
+import { trainHeadline, trainSnapshot } from '../src/horology/train';
 
 describe('train arithmetic', () => {
   it('keeps the School coherent at 18,000 vph', () => {
@@ -12,10 +12,22 @@ describe('train arithmetic', () => {
     expect(snapshot.balanceHz).toBe(2.5);
   });
 
-  it('keeps the Pocket coherent at 21,600 vph', () => {
+  it('keeps the Pocket incoherent until its missing fourth wheel is fitted', () => {
+    const calibre = makeCalibre('pocket');
+    expect(calibre.parts.fourth).toBeNull();
+    const missing = trainSnapshot(calibre);
+    expect(missing.missingFourth).toBe(true);
+    expect(missing.coherent).toBe(false);
+    calibre.parts.fourth = 'F72';
+    const fitted = trainSnapshot(calibre);
+    expect(fitted.missingFourth).toBe(false);
+    expect(fitted.escapeVph).toBe(21_600);
+    expect(fitted.coherent).toBe(true);
+  });
+
+  it('reports a missing fourth wheel in the headline', () => {
     const snapshot = trainSnapshot(makeCalibre('pocket'));
-    expect(snapshot.escapeVph).toBe(21_600);
-    expect(snapshot.coherent).toBe(true);
+    expect(trainHeadline(snapshot)).toBe('Fourth wheel missing');
   });
 
   it('keeps the Marine coherent at 28,800 vph', () => {
@@ -41,5 +53,14 @@ describe('train arithmetic', () => {
     expect(snapshot.centerToFourth).toBeCloseTo(80, 6);
     expect(snapshot.trainOk).toBe(false);
     expect(snapshot.coherent).toBe(false);
+  });
+
+  it('derives the barrel reserve at ten hours per turn', () => {
+    const snapshot = trainSnapshot(makeCalibre('school'));
+    expect(snapshot.barrelHoursPerTurn).toBe(10);
+    expect(snapshot.reserveMax).toBe(60);
+    expect(snapshot.thirdRevsPerHour).toBe(8);
+    expect(snapshot.fourthRevsPerHour).toBe(60);
+    expect(snapshot.escapeRevsPerHour).toBe(600);
   });
 });

@@ -63,9 +63,15 @@ export function makeCalibre(
     temperature: 20,
     fault: activeFault,
     reserveHours: fixture.reserveHours,
-    running: fixture.reserveHours > 0,
+    running: fixture.reserveHours > 0 && parts.fourth !== null,
     serial,
   };
+}
+
+function mountNote(calibre: Calibre): string {
+  return calibre.parts.fourth === null
+    ? `${calibre.name} mounted on the bench. The fourth wheel is in the spares tray.`
+    : `${calibre.name} mounted on the bench.`;
 }
 
 export function makeBenchState(
@@ -81,7 +87,7 @@ export function makeBenchState(
     openDrawer: null,
     exploded: false,
     still: false,
-    log: [makeLogEntry(now, 'state', `${calibre.name} mounted on the bench.`)],
+    log: [makeLogEntry(now, 'state', mountNote(calibre))],
     lastTest: null,
     savedAt: now,
   };
@@ -137,7 +143,7 @@ export function setWheelOnParts(parts: Parts, socket: SocketId, wheel: WheelId):
       next.third = wheel as Parts['third'];
       break;
     case 'fourth':
-      next.fourth = wheel as Parts['fourth'];
+      next.fourth = wheel as Exclude<Parts['fourth'], null>;
       break;
     case 'escape':
       next.escape = wheel as Parts['escape'];
@@ -155,7 +161,8 @@ export function installWheel(
   now = Date.now(),
 ): BenchState {
   const socket = WHEELS[wheel].socket;
-  if (state.calibre.parts[socket] === wheel) return state;
+  const wasMissing = socket === 'fourth' && state.calibre.parts.fourth === null;
+  if (!wasMissing && state.calibre.parts[socket] === wheel) return state;
   const parts = setWheelOnParts(state.calibre.parts, socket, wheel);
   const calibre: Calibre = {
     ...state.calibre,
@@ -170,7 +177,11 @@ export function installWheel(
     openDrawer: socket,
     log: [
       ...state.log.slice(-39),
-      makeLogEntry(now, 'part', `Fitted ${WHEELS[wheel].label}. Movement stopped.`),
+      makeLogEntry(
+        now,
+        'part',
+        `Fitted ${WHEELS[wheel].label}. ${wasMissing ? 'Train complete. ' : ''}Movement stopped.`,
+      ),
     ],
   };
 }
@@ -280,28 +291,31 @@ export function stopMovement(state: BenchState, now = Date.now()): BenchState {
   };
 }
 
-export function completeTest(
-  state: BenchState,
-  result: TestResult,
-  now = Date.now(),
-): BenchState {
+export function completeTest(state: BenchState, now = Date.now()): BenchState {
   const reserve = Math.max(0, state.calibre.reserveHours - 24);
   const running = reserve > 0 ? state.calibre.running : false;
-  const detail = result.certified ? 'Certificate issued.' : 'Outside certificate tolerances.';
+  const calibre: Calibre = {
+    ...state.calibre,
+    reserveHours: Math.round(reserve * 10) / 10,
+    running,
+  };
+  const finalResult = makeTestResult(calibre, now);
+  const certified = finalResult.certified && running;
+  const detail = certified
+    ? 'Certificate issued.'
+    : running
+      ? 'Outside certificate tolerances.'
+      : 'Reserve exhausted. Movement stopped.';
   return {
     ...state,
-    calibre: {
-      ...state.calibre,
-      reserveHours: Math.round(reserve * 10) / 10,
-      running,
-    },
-    lastTest: result,
+    calibre,
+    lastTest: { ...finalResult, certified },
     log: [
       ...state.log.slice(-39),
       makeLogEntry(
         now,
         'test',
-        `Rate test ${result.rate >= 0 ? '+' : ''}${result.rate.toFixed(1)} s/d, ${Math.round(result.amplitude)}°, ${result.beatError.toFixed(1)} ms.`,
+        `Rate test ${finalResult.rate >= 0 ? '+' : ''}${finalResult.rate.toFixed(1)} s/d, ${Math.round(finalResult.amplitude)}°, ${finalResult.beatError.toFixed(1)} ms.`,
         detail,
       ),
     ],
@@ -312,10 +326,16 @@ export function repair(state: BenchState, now = Date.now()): BenchState {
   const info = FAULT_INFO[state.calibre.fault];
   if (state.calibre.fault === 'none' || !info.fix) return state;
   const reserve = state.calibre.fault === 'set_mainspring' ? 0 : state.calibre.reserveHours;
+  const parts: Parts = { ...state.calibre.parts };
+  if (state.calibre.fault === 'worn_pivot' && parts.fourth === null) {
+    parts.fourth = 'F72';
+  }
   return {
     ...state,
     calibre: {
       ...state.calibre,
+      parts,
+      serial: serialFor(parts, state.calibre.fixture),
       fault: 'none',
       running: false,
       reserveHours: reserve,
@@ -344,7 +364,7 @@ export function newCalibre(
     lastTest: null,
     log: [
       ...state.log.slice(-39),
-      makeLogEntry(now, 'state', `${calibre.name} mounted on the bench.`),
+      makeLogEntry(now, 'state', mountNote(calibre)),
     ],
   };
 }
@@ -388,18 +408,19 @@ export function currentSignals(state: BenchState) {
   const train = trainSnapshot(state.calibre);
   const regulation = regulationSnapshot(state.calibre);
   const current = isTestCurrent(state.calibre, state.lastTest);
+  const running = state.calibre.running && train.coherent && state.calibre.reserveHours > 0;
   return {
     train,
     regulation,
     testCurrent: current,
-    certificate: Boolean(current && state.lastTest?.certified),
-    running: state.calibre.running && train.coherent && state.calibre.reserveHours > 0,
+    certificate: Boolean(current && regulation.certified && running),
+    running,
   };
 }
 
 export function canRunTest(state: BenchState): boolean {
   const train = trainSnapshot(state.calibre);
-  return train.coherent && state.calibre.reserveHours >= 24;
+  return train.coherent && state.calibre.reserveHours >= 24 && state.calibre.running;
 }
 
 export function makeCurrentTest(state: BenchState, now = Date.now()): TestResult {

@@ -18,4 +18,14 @@ describe('serial numbers', () => {
       serialFor(first.parts, first.fixture),
     );
   });
+
+  it('gives a missing fourth wheel its own stable serial', () => {
+    const pocket = makeCalibre('pocket');
+    const again = makeCalibre('pocket');
+    expect(pocket.parts.fourth).toBeNull();
+    expect(pocket.serial).toBe(again.serial);
+    const fitted = makeCalibre('pocket');
+    fitted.parts.fourth = 'F72';
+    expect(serialFor(fitted.parts, fitted.fixture)).not.toBe(pocket.serial);
+  });
 });
