@@ -4,13 +4,30 @@ A watchmaker's bench in the browser. Assemble a mechanical movement, wind the ma
 
 Silent by design. Deterministic horology. No account, no backend, no network requests after load.
 
-**Live:** [escapement-two.vercel.app](https://escapement-two.vercel.app)
-
+[![Live Demo](https://img.shields.io/badge/live-escapement--two.vercel.app-9e1a32)](https://escapement-two.vercel.app)
 [![CI](https://github.com/devtechedge/escapement/actions/workflows/ci.yml/badge.svg)](https://github.com/devtechedge/escapement/actions/workflows/ci.yml)
-[![Live on Vercel](https://img.shields.io/badge/live-escapement--two.vercel.app-9e1a32)](https://escapement-two.vercel.app)
+[![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white)](https://vite.dev)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![License: MIT](https://img.shields.io/badge/license-MIT-9e7a43)](LICENSE)
 
-![ESCAPEMENT, the School calibre on a watchmaker's bench](docs/screenshot.png)
+## Live Demo
+
+**https://escapement-two.vercel.app**
+
+> Client-side only. The bench, saved calibres, and test history live in your browser. No account, no backend, no network after load.
+
+## Screenshots
+
+![The School calibre on the day bench](docs/screenshots/01-bench.png)
+
+![The School calibre certified, with a measured rate trace](docs/screenshots/02-certified.png)
+
+![The Pocket calibre with a worn fourth pivot](docs/screenshots/03-pocket.png)
+
+![The bench at night with the lamp toggle](docs/screenshots/04-night.png)
+
+<img src="docs/screenshots/05-mobile.png" alt="The bench at phone width" width="320" />
 
 ## The bench
 
@@ -30,6 +47,7 @@ New builds can start clean or with one of five seeded conditions: a magnetized h
 - Repair the cause, not the symptom. Each fault has a physical fix in the cabinet.
 - Earn a bench certificate when the measured rate is within plus or minus ten seconds per day, the amplitude is 250 to 320 degrees, and the beat error is under 0.5 milliseconds.
 - Export the calibre passport as SVG, the build as JSON, and import a build back.
+- Switch the bench between day and night with the lamp toggle or the L key.
 
 Everything stays in this browser. The bench persists to IndexedDB with a localStorage fallback.
 
@@ -45,6 +63,7 @@ Everything stays in this browser. The bench persists to IndexedDB with a localSt
 | `W` | Wind one turn |
 | `T` | Run the timing test |
 | `C` | Go to the calibre passport |
+| `L` | Switch between day and night |
 | `Space` | Start or stop the movement |
 | `?` | Bench note and model limits |
 | `Escape` | Close the bench note |
@@ -65,11 +84,15 @@ This is a teaching model, not a certified chronometer. The rate, amplitude, and 
 
 ## Stack
 
-- Vite 7, React 19, TypeScript strict.
-- Self-hosted Bodoni Moda, Public Sans, and DM Mono through Fontsource. No external assets.
-- SVG movement and rate trace, CSS materials, no Canvas.
-- Vitest for the horology, Playwright for the bench.
-- No backend, accounts, analytics, state library, UI kit, or runtime network calls.
+| Layer | Choice |
+| --- | --- |
+| Frontend | Vite 7, React 19, TypeScript strict |
+| Movement | Generated SVG, CSS materials |
+| Simulation | Pure TypeScript horology |
+| State | React state, IndexedDB with localStorage fallback |
+| Fonts | Self-hosted Bodoni Moda, Public Sans, DM Mono |
+| Tests | Vitest and Playwright |
+| Host | Vercel static |
 
 ## Run locally
 
@@ -82,10 +105,10 @@ Production preview:
 
 ```bash
 npm run build
-npm run preview -- --host 127.0.0.1 --port 4391
+npm run preview
 ```
 
-The end-to-end suite uses port 4391. Keep it unique: another project's preview on the same port will silently serve the wrong app.
+Tests:
 
 ```bash
 npm test
@@ -94,8 +117,8 @@ npm run e2e
 
 ## Verification
 
-- Typecheck, ESLint, 19 unit tests, and 7 Playwright tests are green.
-- Lighthouse on the production build: **97 performance desktop, 93 mobile, 100 accessibility, 100 best practices, 100 SEO**.
+- Typecheck, ESLint, 19 unit tests, and 8 Playwright tests are green.
+- Lighthouse on the production build: **99 performance desktop, 91 mobile, 100 accessibility, 100 best practices, 100 SEO**.
 - No console errors, no external requests after load, and no horizontal scroll at 390 px.
 - CI runs typecheck, lint, unit tests, the production build, and Playwright; Dependabot tracks patch and minor updates.
 
