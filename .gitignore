@@ -1,0 +1,17 @@
+node_modules
+dist
+dist-ssr
+playwright-report
+test-results
+coverage
+qa-shots
+qa-lighthouse*.json
+.vercel
+*.local
+.DS_Store
+.env
+.env.*
+!.env.example
+
+.vercel
+.env*
