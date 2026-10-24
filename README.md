@@ -6,6 +6,10 @@ Silent by design. Deterministic horology. No account, no backend, no network req
 
 **Live:** [escapement-two.vercel.app](https://escapement-two.vercel.app)
 
+[![CI](https://github.com/devtechedge/escapement/actions/workflows/ci.yml/badge.svg)](https://github.com/devtechedge/escapement/actions/workflows/ci.yml)
+[![Live on Vercel](https://img.shields.io/badge/live-escapement--two.vercel.app-9e1a32)](https://escapement-two.vercel.app)
+[![License: MIT](https://img.shields.io/badge/license-MIT-9e7a43)](LICENSE)
+
 ![ESCAPEMENT, the School calibre on a watchmaker's bench](docs/screenshot.png)
 
 ## The bench
